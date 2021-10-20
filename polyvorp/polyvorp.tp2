@@ -1,0 +1,596 @@
+BACKUP ~polyvorp/backup~
+
+AUTHOR ~Polytope~
+
+VERSION ~v1.00~
+
+ALLOW_MISSING	~rr#dbalr.itm~
+		~balswd.itm~
+	        ~allfive.itm~
+
+LANGUAGE ~English~ ~english~ ~polyvorp/english/setup.tra~
+
+BEGIN @10 DESIGNATED 10
+
+COPY ~polyvorp/vorpal~ ~override~
+
+COPY_EXISTING ~ax1h15.itm~ ~override~
+	      ~sw2h15.itm~ ~override~
+	      ~balor.itm~ ~override~
+	      ~planetar.itm~ ~override~
+	      ~finsol02.itm~ ~override~
+  LPF DELETE_EFFECT INT_VAR match_opcode = 55 END //SCS on some installs
+  LPF DELETE_EFFECT INT_VAR match_opcode = 13 END
+  LPF DELETE_EFFECT INT_VAR match_opcode = 10 END
+  LPF DELETE_EFFECT INT_VAR match_opcode = 139 END
+  LPF DELETE_EFFECT INT_VAR match_opcode = 141 END
+  LPF DELETE_EFFECT INT_VAR match_opcode = 146 END //aTweaks
+  LPF ADD_ITEM_EFFECT INT_VAR type = 1 opcode = 146 target = 2 parameter1 = 1 parameter2 = 1 timing = 1 STR_VAR resource = ~a^vorpal~ END
+ BUT_ONLY
+
+ACTION_IF FILE_EXISTS_IN_GAME ~balswd.itm~ THEN BEGIN 
+ COPY_EXISTING ~balswd.itm~ ~override~
+   LPF DELETE_EFFECT INT_VAR match_opcode = 55 END //SCS on some installs
+   LPF DELETE_EFFECT INT_VAR match_opcode = 13 END
+   LPF DELETE_EFFECT INT_VAR match_opcode = 139 END
+   LPF DELETE_EFFECT INT_VAR match_opcode = 141 END
+   LPF DELETE_EFFECT INT_VAR match_opcode = 146 END //aTweaks
+   LPF ADD_ITEM_EFFECT INT_VAR type = 1 opcode = 146 target = 2 parameter1 = 1 parameter2 = 1 timing = 1 STR_VAR resource = ~a^vorpal~ END
+  BUT_ONLY
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~rr#dbalr.itm~ THEN BEGIN 
+ COPY_EXISTING ~rr#dbalr.itm~ ~override~
+   LPF DELETE_EFFECT INT_VAR match_opcode = 55 END //SCS on some installs
+   LPF DELETE_EFFECT INT_VAR match_opcode = 13 END
+   LPF DELETE_EFFECT INT_VAR match_opcode = 139 END
+   LPF DELETE_EFFECT INT_VAR match_opcode = 141 END
+   LPF DELETE_EFFECT INT_VAR match_opcode = 146 END //aTweaks
+   LPF ADD_ITEM_EFFECT INT_VAR type = 1 opcode = 146 target = 2 parameter1 = 1 parameter2 = 1 timing = 1 STR_VAR resource = ~a^vorpal~ END
+  BUT_ONLY
+END
+
+//The Ravager Halberd is done a bit differently because it can cast a Cloak of Fear spell.
+//Not that I think many players use a round to activate that ability when they could instead
+//Whirlwind with the halberd...
+
+COPY_EXISTING ~halb11.itm~ ~override~
+  LPF DELETE_EFFECT INT_VAR match_opcode = 55 END //SCS on some installs
+  LPF DELETE_EFFECT INT_VAR match_opcode = 13 END
+  LPF DELETE_EFFECT INT_VAR match_opcode = 12 END
+  LPF DELETE_EFFECT INT_VAR match_opcode = 139 END
+  LPF DELETE_EFFECT INT_VAR match_opcode = 141 END
+ BUT_ONLY
+
+COPY_EXISTING ~halb11.itm~ ~override~
+  READ_LONG   0x64 "abil_off" ELSE 0
+  READ_SHORT  0x68 "abil_num" ELSE 0
+  READ_LONG   0x6a "fx_off"   ELSE 0
+  SET "delta" = 0
+  FOR (index = 0; index < abil_num; index = index + 1) BEGIN // looks for melee ability header
+    READ_BYTE   ("%abil_off%" +        ("%index%" * 0x38)) "type"
+    READ_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "abil_fx_idx"
+    SET "abil_fx_idx" = ("%abil_fx_idx%" + "%delta%")
+    WRITE_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "%abil_fx_idx%"
+    PATCH_IF ("%type%" = 1) BEGIN // melee ability check
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 146   // cast spell
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          1 // 
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          1 // 
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 1    //
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 14  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^vorpal~ // resref
+      SET "delta" = ("%delta%" + 1)
+    END	
+  END
+  BUT_ONLY_IF_IT_CHANGES
+
+COPY_EXISTING ~ax1h15.itm~ ~override~
+  LPF ALTER_EFFECT INT_VAR silent = 1 match_opcode = 146 match_probability1 = 100 match_probability2 = 0 probability1 = 4 END
+ BUT_ONLY
+
+COPY_EXISTING ~finsol02.itm~ ~override~
+  LPF ALTER_EFFECT INT_VAR silent = 1 match_opcode = 146 match_probability1 = 100 match_probability2 = 0 probability1 = 14 END
+ BUT_ONLY
+
+COPY_EXISTING ~sw2h15.itm~ ~override~
+	      ~planetar.itm~ ~override~
+  LPF ALTER_EFFECT INT_VAR silent = 1 match_opcode = 146 match_probability1 = 100 match_probability2 = 0 probability1 = 9 END
+ BUT_ONLY
+
+COPY_EXISTING ~balor.itm~ ~override~
+  LPF ALTER_EFFECT INT_VAR silent = 1 match_opcode = 146 match_probability1 = 100 match_probability2 = 0 probability1 = 19 END
+ BUT_ONLY 
+
+ACTION_IF FILE_EXISTS_IN_GAME ~balswd.itm~ THEN BEGIN 
+ COPY_EXISTING ~balswd.itm~ ~override~
+   LPF ALTER_EFFECT INT_VAR silent = 1 match_opcode = 146 match_probability1 = 100 match_probability2 = 0 probability1 = 19 END
+  BUT_ONLY
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~rr#dbalr.itm~ THEN BEGIN 
+ COPY_EXISTING ~rr#dbalr.itm~ ~override~
+   LPF ALTER_EFFECT INT_VAR silent = 1 match_opcode = 146 match_probability1 = 100 match_probability2 = 0 probability1 = 19 END
+  BUT_ONLY
+END
+
+//EFF targetted immunity to vorpal hits, credit to Nythrun and Avenger
+//This is for creature types that should be unaffected by decapitation per PnP (and commonsense) 
+//which includes Demiliches, they're already detached skulls! Although those can't be hit by the
+//Silver Sword or Planetars anyway unless some other mod increases the weapon enchantment level
+
+COPY_EXISTING ~ax1h15.itm~ ~override~
+	      ~halb11.itm~ ~override~
+	      ~sw2h15.itm~ ~override~
+	      ~balor.itm~ ~override~
+	      ~planetar.itm~ ~override~
+	      ~finsol02.itm~ ~override~
+  READ_LONG   0x64 "abil_off" ELSE 0
+  READ_SHORT  0x68 "abil_num" ELSE 0
+  READ_LONG   0x6a "fx_off"   ELSE 0
+  SET "delta" = 0
+  FOR (index = 0; index < abil_num; index = index + 1) BEGIN // looks for melee ability header
+    READ_BYTE   ("%abil_off%" +        ("%index%" * 0x38)) "type"
+    READ_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "abil_fx_idx"
+    SET "abil_fx_idx" = ("%abil_fx_idx%" + "%delta%")
+    WRITE_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "%abil_fx_idx%"
+    PATCH_IF ("%type%" = 1) BEGIN // melee ability check
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          106 // Doppelganger
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          119 // Ooze or slime
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          128 // Rakshasa
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          132 // Shadow
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          133 // Spectre
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          134 // Wraith
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          136 // Mist
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          144 // Golem
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          145 // Elemental
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          155 // Demilich
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      SET "delta" = ("%delta%" + 1)
+    END	
+  END
+  BUT_ONLY_IF_IT_CHANGES
+
+ACTION_IF FILE_EXISTS_IN_GAME ~balswd.itm~ THEN BEGIN 
+ COPY_EXISTING ~balswd.itm~ ~override~
+  READ_LONG   0x64 "abil_off" ELSE 0
+  READ_SHORT  0x68 "abil_num" ELSE 0
+  READ_LONG   0x6a "fx_off"   ELSE 0
+  SET "delta" = 0
+  FOR (index = 0; index < abil_num; index = index + 1) BEGIN // looks for melee ability header
+    READ_BYTE   ("%abil_off%" +        ("%index%" * 0x38)) "type"
+    READ_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "abil_fx_idx"
+    SET "abil_fx_idx" = ("%abil_fx_idx%" + "%delta%")
+    WRITE_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "%abil_fx_idx%"
+    PATCH_IF ("%type%" = 1) BEGIN // melee ability check
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          106 // Doppelganger
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          119 // Ooze or slime
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          128 // Rakshasa
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          132 // Shadow
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          133 // Spectre
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          134 // Wraith
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          136 // Mist
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          144 // Golem
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          145 // Elemental
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          155 // Demilich
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      SET "delta" = ("%delta%" + 1)
+    END	
+  END
+  BUT_ONLY_IF_IT_CHANGES
+ END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~rr#dbalr.itm~ THEN BEGIN 
+ COPY_EXISTING ~rr#dbalr.itm~ ~override~
+  READ_LONG   0x64 "abil_off" ELSE 0
+  READ_SHORT  0x68 "abil_num" ELSE 0
+  READ_LONG   0x6a "fx_off"   ELSE 0
+  SET "delta" = 0
+  FOR (index = 0; index < abil_num; index = index + 1) BEGIN // looks for melee ability header
+    READ_BYTE   ("%abil_off%" +        ("%index%" * 0x38)) "type"
+    READ_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "abil_fx_idx"
+    SET "abil_fx_idx" = ("%abil_fx_idx%" + "%delta%")
+    WRITE_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "%abil_fx_idx%"
+    PATCH_IF ("%type%" = 1) BEGIN // melee ability check
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          106 // Doppelganger
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          119 // Ooze or slime
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          128 // Rakshasa
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          132 // Shadow
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          133 // Spectre
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          134 // Wraith
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          136 // Mist
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          144 // Golem
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          145 // Elemental
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          155 // Demilich
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      SET "delta" = ("%delta%" + 1)
+    END	
+  END
+  BUT_ONLY_IF_IT_CHANGES
+ END
+
+COPY_EXISTING ~finmel01.itm~ ~override~
+	      ~ravag03.itm~ ~override~
+	      ~bhaalhp1.itm~ ~override~
+	      ~imoenhp1.itm~ ~override~
+	      ~jonhp1.itm~ ~override~
+	      ~minhp1.itm~ ~override~
+	      ~monhp1.itm~ ~override~
+  LPF ADD_ITEM_EQEFFECT INT_VAR opcode = 206 target = 1 parameter1 = `0 timing = 2 STR_VAR resource = ~a^vorpal~ END 
+ BUT_ONLY
+
+ACTION_IF FILE_EXISTS_IN_GAME ~allfive.itm~ THEN BEGIN 
+ COPY_EXISTING ~allfive.itm~ ~override~
+   LPF ADD_ITEM_EQEFFECT INT_VAR opcode = 206 target = 1 parameter1 = `0 timing = 2 STR_VAR resource = ~a^vorpal~ END 
+  BUT_ONLY
+END
+
+COPY_EXISTING ~sw2h15.itm~ ~override~
+SAY 0x54 @30
+
+COPY_EXISTING ~ax1h15.itm~ ~override~
+SAY 0x54 @31
+
+COPY_EXISTING ~halb11.itm~ ~override~
+SAY 0x54 @32
+
+BEGIN @20 DESIGNATED 20
+
+REQUIRE_PREDICATE FILE_EXISTS_IN_GAME ~a^vorpal.spl~ @21
+
+COPY_EXISTING ~ax1h15.itm~ ~override~
+	      ~halb11.itm~ ~override~
+	      ~sw2h15.itm~ ~override~
+	      ~balor.itm~ ~override~
+	      ~planetar.itm~ ~override~
+	      ~finsol02.itm~ ~override~
+  READ_LONG   0x64 "abil_off" ELSE 0
+  READ_SHORT  0x68 "abil_num" ELSE 0
+  READ_LONG   0x6a "fx_off"   ELSE 0
+  SET "delta" = 0
+  FOR (index = 0; index < abil_num; index = index + 1) BEGIN // looks for melee ability header
+    READ_BYTE   ("%abil_off%" +        ("%index%" * 0x38)) "type"
+    READ_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "abil_fx_idx"
+    SET "abil_fx_idx" = ("%abil_fx_idx%" + "%delta%")
+    WRITE_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "%abil_fx_idx%"
+    PATCH_IF ("%type%" = 1) BEGIN // melee ability check
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          146 // Dragon
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      SET "delta" = ("%delta%" + 1)
+    END	
+  END
+  BUT_ONLY_IF_IT_CHANGES
+
+ACTION_IF FILE_EXISTS_IN_GAME ~balswd.itm~ THEN BEGIN 
+ COPY_EXISTING ~balswd.itm~ ~override~
+  READ_LONG   0x64 "abil_off" ELSE 0
+  READ_SHORT  0x68 "abil_num" ELSE 0
+  READ_LONG   0x6a "fx_off"   ELSE 0
+  SET "delta" = 0
+  FOR (index = 0; index < abil_num; index = index + 1) BEGIN // looks for melee ability header
+    READ_BYTE   ("%abil_off%" +        ("%index%" * 0x38)) "type"
+    READ_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "abil_fx_idx"
+    SET "abil_fx_idx" = ("%abil_fx_idx%" + "%delta%")
+    WRITE_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "%abil_fx_idx%"
+    PATCH_IF ("%type%" = 1) BEGIN // melee ability check
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          146 // Dragon
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      SET "delta" = ("%delta%" + 1)
+    END	
+  END
+  BUT_ONLY_IF_IT_CHANGES
+ END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~rr#dbalr.itm~ THEN BEGIN 
+ COPY_EXISTING ~rr#dbalr.itm~ ~override~
+  READ_LONG   0x64 "abil_off" ELSE 0
+  READ_SHORT  0x68 "abil_num" ELSE 0
+  READ_LONG   0x6a "fx_off"   ELSE 0
+  SET "delta" = 0
+  FOR (index = 0; index < abil_num; index = index + 1) BEGIN // looks for melee ability header
+    READ_BYTE   ("%abil_off%" +        ("%index%" * 0x38)) "type"
+    READ_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "abil_fx_idx"
+    SET "abil_fx_idx" = ("%abil_fx_idx%" + "%delta%")
+    WRITE_SHORT  ("%abil_off%" + 0x20 + ("%index%" * 0x38)) "%abil_fx_idx%"
+    PATCH_IF ("%type%" = 1) BEGIN // melee ability check
+      READ_SHORT  ("%abil_off%" + 0x1e + ("%index%" * 0x38)) "abil_fx_num"
+      WRITE_SHORT ("%abil_off%" + 0x1e + ("%index%" * 0x38)) ("%abil_fx_num%" +  1)
+      INSERT_BYTES            ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 0x30 // new effect
+        WRITE_SHORT           ("%fx_off%" +        ("%abil_fx_idx%" * 0x30)) 177   // use eff
+        WRITE_BYTE            ("%fx_off%" + 0x02 + ("%abil_fx_idx%" * 0x30)) 2    // target: preset target
+        WRITE_LONG  ("%fx_off%" + 0x04 + ("%abil_fx_idx%" * 0x30))          146 // Dragon
+        WRITE_LONG  ("%fx_off%" + 0x08 + ("%abil_fx_idx%" * 0x30))          4 // race.ids
+        WRITE_BYTE            ("%fx_off%" + 0x0c + ("%abil_fx_idx%" * 0x30)) 0    // zero duration works
+        WRITE_BYTE            ("%fx_off%" + 0x12 + ("%abil_fx_idx%" * 0x30)) 100  // probability
+        WRITE_ASCII ("%fx_off%" + 0x14 + ("%abil_fx_idx%" * 0x30)) ~a^imm146~ // resref
+      SET "delta" = ("%delta%" + 1)
+    END	
+  END
+  BUT_ONLY_IF_IT_CHANGES
+ END

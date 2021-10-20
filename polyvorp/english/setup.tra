@@ -1,0 +1,70 @@
+@10="Rebalanced Vorpal Weapons (affects enemies and players)"
+@20="Make all Dragons immune to Vorpal hits (previously some were, with default rebalancing none are)"
+@21="This component requires global vorpal rebalancing"
+@30="This Vorpal Silver Sword radiates an aura of dark magic, and the finely sharpened blade can sever heads with ease.
+
+STATISTICS:
+
+Combat Abilities:
+ Vorpal, any blow that would reduce the target to half their maximum hitpoints or less has a 10% chance to instantly decapitate them
+
+THAC0: +3 bonus
+Damage:  1D10 +3
+Damage type:  slashing
+Weight: 15
+Speed Factor: 7
+Proficiency Type: Two-Handed Sword
+Type:  2-handed
+Requires: 14 Strength
+Not Usable By:
+ Druid
+ Cleric
+ Mage 
+ Thief"
+@31="Enhanced by the magic of the Balor's Claw, the Axe of the Unyielding is now the most fearsome of weapons - a Vorpal axe designed for taking heads.
+
+STATISTICS:
+
+Equipped Abilities: 
+  +1 bonus to AC
+  Wielder regenerates 3 hp/round
+
+Combat Abilities:
+  Vorpal, any blow that would reduce the target to half their maximum hitpoints or less has a 5% chance to instantly decapitate them
+
+THAC0: +5 bonus 
+Damage: 1D8 +5
+Damage type:  slashing
+Weight: 5
+Speed Factor: 2
+Proficiency Type: Axe
+Type:  1-handed
+Requires: 10 Strength
+Not Usable By:
+ Druid
+ Cleric
+ Mage 
+ Thief"
+@32="Reforged with the Serpent Staff, this dark halberd can now remove heads with the swiftness of a striking viper. Ravager also retains its former ability to induce magical fear, although wise foes might start running anyway after seeing it used in combat...
+
+STATISTICS:
+
+Cast Cloak of Fear thrice/day
+
+Combat Abilities:
+  Vorpal, any blow that would reduce the target to half their maximum hitpoints or less has a 15% chance to instantly decapitate them
+
+THAC0: +6 bonus
+Damage:  1D10+6
+Damage type:  piercing
+Weight: 10
+Speed Factor: 3
+Proficiency Type: Halberd
+Type:  2-handed
+Requires: 13 Strength
+Not Usable By:
+ Monk 
+ Druid
+ Cleric
+ Mage
+ Thief"
