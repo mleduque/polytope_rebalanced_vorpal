@@ -23,3 +23,9 @@ File at https://www.gibberlings3.net/applications/core/interface/file/attachment
 > - Silver Sword & Planetars' Swords 10% 
 > - Ravager Halberd & Fallen Solars' Swords 15%
 > - Balors' Swords 20%
+
+## Components
+
+10. "Rebalanced Vorpal Weapons (affects enemies and players)"
+
+20. "Make all Dragons immune to Vorpal hits (previously some were, with default rebalancing none are)"
